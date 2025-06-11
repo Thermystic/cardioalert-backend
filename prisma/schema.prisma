@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  role      UserRole @default(PATIENT)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emergencyAlerts EmergencyAlert[] @relation("PatientAlerts")
+  responseAlerts  EmergencyAlert[] @relation("ResponderAlerts")
+
+  @@map("users")
+}
+
+model EmergencyAlert {
+  id          String      @id @default(cuid())
+  patientId   String
+  responderId String?
+  type        AlertType
+  severity    Severity
+  status      AlertStatus @default(ACTIVE)
+  description String?
+  latitude    Float
+  longitude   Float
+  address     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  respondedAt DateTime?
+  resolvedAt  DateTime?
+
+  patient   User  @relation("PatientAlerts", fields: [patientId], references: [id])
+  responder User? @relation("ResponderAlerts", fields: [responderId], references: [id])
+
+  @@map("emergency_alerts")
+}
+
+enum UserRole {
+  PATIENT
+  RESPONDER
+  ADMIN
+}
+
+enum AlertType {
+  HEART_ATTACK
+  STROKE
+  FALL
+  BREATHING_DIFFICULTY
+  CHEST_PAIN
+  OTHER
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  RESPONDED
+  RESOLVED
+  CANCELLED
+}
